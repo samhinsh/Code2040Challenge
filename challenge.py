@@ -79,8 +79,6 @@ def findInHaystack(token):
             break
         counter += 1
 
-    print "Needle found at position " + str(position) + " in haystack"
-
     # send result to challenge server
     token = { 'token': token['token'], 'needle': position }
     success = getResponse( 'http://challenge.code2040.org/api/validateneedle',
@@ -88,34 +86,38 @@ def findInHaystack(token):
 
     print success
 
-# Returns an array containing only strings without the prefix to the challenger server
+# Returns an array containing only strings without the prefix, to the challenge server
 
 def removePrefixes(token):
 
     payload = getResponse( 'http://challenge.code2040.org/api/prefix', 
                            token );
-    print payload
     prefix = payload[ 'prefix' ]
     array = payload[ 'array' ]
 
-    # filter all strings from the array not starting with the prefix
+    # filter all strings not starting with the prefix from the array 
     array = filter(lambda str: str[ 0 : len(prefix) ] != prefix, array )
 
-    for word in array:
-        print word
-
-    # manually parse JSON, 'result' is not a key in this response 
-    # send the results to the challenge server
+    # send filtered array string back to the server with user credentials
     token = { 'token': token['token'], 'array': array }
+    success = getResponse( 'http://challenge.code2040.org/api/validateprefix',
+                            token );
 
-    # send the dictionary at the given location
-    response = requests.post( 'http://challenge.code2040.org/api/validateprefix', 
-        json = token );
-    
-    # reponse is of type Response, parse into JSON form
-    response = response.json()
+    print success
 
-    print response
+# plays the dating game and returns the new date to the challenge server
+
+def datingGame(token):
+
+    payload = getResponse( 'http://challenge.code2040.org/api/time', 
+                           token );
+
+    print payload
+
+    datestamp = payload[ 'datestamp' ]
+    interval = payload[ 'interval']
+
+
 
 if __name__ == '__main__':
     
@@ -129,3 +131,4 @@ if __name__ == '__main__':
     reverse(token)
     findInHaystack(token)
     removePrefixes(token)
+    datingGame(token)
