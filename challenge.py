@@ -1,5 +1,8 @@
 import requests
 
+import iso8601
+from datetime import timedelta
+
 # get a challenge HTTP response
 
 def getResponse( url, dictionary ):
@@ -27,8 +30,6 @@ def register():
     # send the dictionary at the given location
     userID = getResponse( 'http://challenge.code2040.org/api/register', 
                             dictionary );
-
-    print 'You have registered under user ID ' + userID + '!'
     return userID
 
 # reverse a string, return the reversed string to the challenge server
@@ -44,8 +45,6 @@ def reverse(token):
     for place in range( 0, len(string) ):
         next = string[ len(string) - 1 - place ]
         reversed += next
-
-    print 'You reversed the string "' + string + '" yielding "' + reversed + '"'
     
     # send reversed string back to the server with user credentials
     token = { 'token': token['token'], 'string': reversed }
@@ -112,12 +111,27 @@ def datingGame(token):
     payload = getResponse( 'http://challenge.code2040.org/api/time', 
                            token );
 
-    print payload
-
     datestamp = payload[ 'datestamp' ]
     interval = payload[ 'interval']
 
+    # parse the iso8601 timestamp into a datetime timestamp
+    datestamp = iso8601.parse_date(datestamp)
 
+    # convert time interval to a datetime timestamp
+    interval = timedelta( seconds = interval )
+
+    # add the two timestamps together
+    datestamp = datestamp + interval
+
+    # convert new timestamp to iso8601
+    datestamp = datestamp.isoformat()
+
+    # send updated time string back to the server with user credentials
+    token = { 'token': token['token'], 'datestamp': datestamp }
+    success = getResponse( 'http://challenge.code2040.org/api/validatetime',
+                            token );
+
+    print success
 
 if __name__ == '__main__':
     
