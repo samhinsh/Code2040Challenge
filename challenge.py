@@ -1,6 +1,7 @@
 import requests
 
 # get a challenge HTTP response
+
 def getResponse( url, dictionary ):
 
     # send the dictionary at the given location
@@ -9,11 +10,13 @@ def getResponse( url, dictionary ):
     # reponse is of type Response, parse into JSON form
     response = response.json()
 
-    # access the JSON element
-    return response
+    # access the payload of the JSON element, speficied 
+    # by the challange documentation
+    return response['result']
 
 
 # register for the challenge, return the userID
+
 def register():
 
     # create the dictionary to send to the challenge server
@@ -25,9 +28,6 @@ def register():
     userID = getResponse( 'http://challenge.code2040.org/api/register', 
                             dictionary );
 
-    # value specified by the challenge documentation
-    userID = userID[ 'result' ]
-
     print 'You have registered under user ID ' + userID + '!'
     return userID
 
@@ -38,9 +38,6 @@ def reverse(token):
     # send the dictionary at the given location
     string = getResponse( 'http://challenge.code2040.org/api/getstring', 
                           token );
-
-    # value specified by the challenge documentation
-    string = string[ 'result' ]
     
     # add the "next"-to-last character to a new string
     reversed = ''
@@ -52,34 +49,83 @@ def reverse(token):
     
     # send reversed string back to the server with user credentials
     token = { 'token': token['token'], 'string': reversed }
-    response = getResponse( 'http://challenge.code2040.org/api/validatestring',
+    success = getResponse( 'http://challenge.code2040.org/api/validatestring',
                             token );
 
-    print response['result']
+    print success
 
 
-# find a needle in a haystack, return its position
+
+# find a needle in a haystack, return its position to the challenge server
+
 def findInHaystack(token):
 
     payload = getResponse( 'http://challenge.code2040.org/api/haystack', 
                             token )
+
+    # singleton element
+    needle = payload[ 'needle' ]
+
+    # array element
+    haystack = payload[ 'haystack' ]
+
+    # position in the array
+    position = -1
+
+    counter = 0
+    for element in haystack:
+        if element == needle:
+            position = counter
+            break
+        counter += 1
+
+    print "Needle found at position " + str(position) + " in haystack"
+
+    # send result to challenge server
+    token = { 'token': token['token'], 'needle': position }
+    success = getResponse( 'http://challenge.code2040.org/api/validateneedle',
+                            token );
+
+    print success
+
+# Returns an array containing only strings without the prefix to the challenger server
+
+def removePrefixes(token):
+
+    payload = getResponse( 'http://challenge.code2040.org/api/prefix', 
+                           token );
     print payload
+    prefix = payload[ 'prefix' ]
+    array = payload[ 'array' ]
 
-    # needle = payload[ 'needle' ]
-    # haystack = payload[ 'haystack' ]
+    # filter all strings from the array not starting with the prefix
+    array = filter(lambda str: str[ 0 : len(prefix) ] != prefix, array )
 
-    # print needle
-    # print haystack
+    for word in array:
+        print word
+
+    # manually parse JSON, 'result' is not a key in this response 
+    # send the results to the challenge server
+    token = { 'token': token['token'], 'array': array }
+
+    # send the dictionary at the given location
+    response = requests.post( 'http://challenge.code2040.org/api/validateprefix', 
+        json = token );
+    
+    # reponse is of type Response, parse into JSON form
+    response = response.json()
+
+    print response
 
 if __name__ == '__main__':
     
     # register user
     userID = register()
 
-    #create token for future challenges
+    # create login token for challenges
     token = { 'token': userID }
 
-    # challenges 1-3
+    # Stages I-IV
     reverse(token)
     findInHaystack(token)
-
+    removePrefixes(token)
