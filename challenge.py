@@ -1,5 +1,4 @@
 import requests
-
 import iso8601
 from datetime import timedelta
 
